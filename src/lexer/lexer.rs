@@ -62,11 +62,12 @@ impl<'a> Lexer<'a> {
 
             // Pattern match for different tokens.
             Some(c) => match c {
+                '/' => self.handle_comment_or_division(),
                 'a'..='z' | 'A'..='Z' | '_' => self.handle_symbol(),
                 '0'..='9' => self.handle_number(),
                 '"' => self.handle_string(),
-                '+' | '-' | '*' | '/' | '=' | '<' | '>' | '&' | '|' => self.handle_operator(),
-                ';' | ',' | '(' | ')' | '{' | '}' | '[' | ']' => self.handle_punctuator(),
+                '+' | '-' | '*' | '=' | '<' | '>' | '&' | '|' => self.handle_operator(),
+                ';' | ',' | '(' | ')' | '{' | '}' | '[' | ']' | '.' => self.handle_punctuator(),
 
                 // If there is no handler for the character, push an error with some info to the error list.
                 // Also, make sure the lexer still continues it's advancement.
@@ -85,8 +86,104 @@ impl<'a> Lexer<'a> {
         Some(token)
     }
 
+    fn handle_comment_or_division(&mut self) -> Token {
+        let position = self.position.clone();
+        let mut value = String::new();
+
+        self.advance();
+        if self.current_char.unwrap() == '/' {
+            self.advance();
+            while let Some(c) = self.current_char {
+                if c == '\n' {
+                    break;
+                }
+                value.push(c);
+                self.advance();
+            }
+            return Token::new(TokenType::Comment, Value::String(value), position.row, position.col)
+        }
+        if self.current_char.unwrap() == '*' {
+            self.advance();
+            while let Some(c) = self.current_char {
+                if c == '*' {
+                    if self.input.next().unwrap() == '/' {
+                        break;
+                    }
+                }
+                value.push(c);
+                self.advance();
+            }
+            self.advance();
+            return Token::new(TokenType::Comment, Value::String(value), position.row, position.col)
+        }
+
+        return Token::new(TokenType::Operator(Operator::Divide), Value::String(value), position.row, position.col)
+    }
+
     fn handle_operator(&mut self) -> Token {
-        todo!()
+        let position = self.position.clone();
+
+        let mut value = String::new();
+
+        while let Some(c) = self.current_char {
+            if value.len() == 2 && (value != "<<" || value != ">>") {
+                break;
+            }
+            if !c.is_alphanumeric() && !c.is_whitespace() {
+                value.push(c);
+                self.advance();
+            } else {
+                break;
+            }
+        }
+        let token_type = match value.as_str() {
+            // Arithmetic
+            "+" => TokenType::Operator(Operator::Add),
+            "-" => TokenType::Operator(Operator::Subtract),
+            "*" => TokenType::Operator(Operator::MultiplyOrPointer),
+            "/" => TokenType::Operator(Operator::Divide),
+            "%" => TokenType::Operator(Operator::Modulo),
+            "++" => TokenType::Operator(Operator::Increment),
+            "--" => TokenType::Operator(Operator::Decrement),
+
+            // Bitwise
+            "&" => TokenType::Operator(Operator::BitwiseAndOrDereference),
+            "|" => TokenType::Operator(Operator::BitwiseOr),
+            "^" => TokenType::Operator(Operator::BitwiseXor),
+            "~" => TokenType::Operator(Operator::BitwiseNot),
+            "<<" => TokenType::Operator(Operator::LeftShift),
+            ">>" => TokenType::Operator(Operator::RightShift),
+
+            // Logical
+            "&&" => TokenType::Operator(Operator::LogicalAnd),
+            "||" => TokenType::Operator(Operator::LogicalOr),
+            "!" => TokenType::Operator(Operator::LogicalNot),
+
+            // Comparison
+            "==" => TokenType::Operator(Operator::Equal),
+            "!=" => TokenType::Operator(Operator::NotEqual),
+            "<" => TokenType::Operator(Operator::LessThan),
+            ">" => TokenType::Operator(Operator::GreaterThan),
+            "<=" => TokenType::Operator(Operator::LessThanOrEqual),
+            ">=" => TokenType::Operator(Operator::GreaterThanOrEqual),
+
+            // Assignment
+            "=" => TokenType::Operator(Operator::Assign),
+            "+=" => TokenType::Operator(Operator::AddAssign),
+            "-=" => TokenType::Operator(Operator::SubtractAssign),
+            "*=" => TokenType::Operator(Operator::MultiplyAssign),
+            "/=" => TokenType::Operator(Operator::DivideAssign),
+            "%=" => TokenType::Operator(Operator::ModuloAssign),
+            "&=" => TokenType::Operator(Operator::BitwiseAndAssign),
+            "|=" => TokenType::Operator(Operator::BitwiseOrAssign),
+            "^=" => TokenType::Operator(Operator::BitwiseXorAssign),
+            "<<=" => TokenType::Operator(Operator::LeftShiftAssign),
+            ">>=" => TokenType::Operator(Operator::RightShiftAssign),
+
+            _ => TokenType::Unknown,
+        };
+
+        Token::new(token_type, Value::String(value), position.row, position.col)
     }
 
     fn handle_punctuator(&mut self) -> Token {
@@ -96,7 +193,6 @@ impl<'a> Lexer<'a> {
         let token_type = TokenType::Punctuator(value);
 
         self.advance();
-
         Token::new(token_type, Value::Char(value), position.row, position.col)
     }
 
@@ -154,11 +250,47 @@ impl<'a> Lexer<'a> {
     }
 
     fn handle_number(&mut self) -> Token {
-        todo!()
+        let position = self.position.clone();
+        let mut value = String::new();
+
+        while let Some(c) = self.current_char {
+            if c == '.' && value.contains('.') {
+                break;
+            }
+            if c.is_ascii_digit() || c == '.' {
+                value.push(c);
+                self.advance();
+            } else {
+                break;
+            }
+        }
+
+        if value.contains('.') {
+            Token::new(TokenType::FloatLiteral, Value::Float(value.parse().unwrap()), position.row, position.col)
+
+        } else {
+            Token::new(TokenType::IntegerLiteral, Value::Integer(value.parse().unwrap()), position.row, position.col)
+
+        }
+
     }
 
     fn handle_string(&mut self) -> Token {
-        todo!()
+        let position = self.position.clone();
+        let mut value = String::new();
+
+        self.advance();
+
+        while let Some(c) = self.current_char {
+            if c != '"' {
+                value.push(c);
+                self.advance();
+            } else {
+                break;
+            }
+        }
+        self.advance();
+        Token::new(TokenType::StringLiteral, Value::String(value), position.row, position.col)
     }
 
     fn skip_whitespace(&mut self) {

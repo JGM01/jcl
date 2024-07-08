@@ -11,14 +11,14 @@ pub enum Operator {
     // Arithmetic
     Add,
     Subtract,
-    Multiply,
+    MultiplyOrPointer,
     Divide,
     Modulo,
     Increment,
     Decrement,
 
     // Bitwise
-    BitwiseAnd,
+    BitwiseAndOrDereference,
     BitwiseOr,
     BitwiseXor,
     BitwiseNot,
@@ -100,6 +100,7 @@ pub enum TokenType {
     Punctuator(char),
     Comment,
     Whitespace,
+    Unknown,
     EOF,
 }
 
@@ -122,7 +123,7 @@ impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Token {{ type: {:?}, value: {:?}, position: ({}, {}) }}",
+            "{{ type: {:?}, value: {:?}, position: ({}, {}) }}",
             self.token_type, self.value, self.position.row, self.position.col
         )
     }
