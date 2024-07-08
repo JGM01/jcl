@@ -3,9 +3,9 @@ use std::{iter::Peekable, str::Chars};
 use super::token::{Token, TokenType, Value, Position, Operator, Keyword};
 
 #[derive(Debug, Clone)]
-struct LexingError {
-    message: String,
-    position: Position,
+pub struct LexingError {
+    pub message: String,
+    pub position: Position,
 }
 
 impl LexingError {
@@ -53,7 +53,9 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn next_token(&mut self) -> Option<Token> {
+    /// Provides the next token in a stream of characters.
+    pub fn next_token(&mut self) -> Option<Token> {
+        self.skip_whitespace();
 
         // Define the token by checking the current character, and then handle.
         let token: Token = match self.current_char {
@@ -88,11 +90,67 @@ impl<'a> Lexer<'a> {
     }
 
     fn handle_punctuator(&mut self) -> Token {
-        todo!()
+        // Get relevant info
+        let position = self.position.clone();
+        let value = self.current_char.unwrap();
+        let token_type = TokenType::Punctuator(value);
+
+        self.advance();
+
+        Token::new(token_type, Value::Char(value), position.row, position.col)
     }
 
     fn handle_symbol(&mut self) -> Token {
-        todo!()
+        let token_position = self.position.clone();
+
+        let mut identifier = String::new();
+
+        while let Some(c) = self.current_char {
+            if c.is_alphanumeric() || c == '_' {
+                identifier.push(c);
+                self.advance();
+            } else {
+                break;
+            }
+        }
+
+        let token_type = match identifier.as_str() {
+            "auto" => TokenType::Keyword(Keyword::Auto),
+            "break" => TokenType::Keyword(Keyword::Break),
+            "case" => TokenType::Keyword(Keyword::Case),
+            "char" => TokenType::Keyword(Keyword::Char),
+            "const" => TokenType::Keyword(Keyword::Const),
+            "continue" => TokenType::Keyword(Keyword::Continue),
+            "default" => TokenType::Keyword(Keyword::Default),
+            "do" => TokenType::Keyword(Keyword::Do),
+            "double" => TokenType::Keyword(Keyword::Double),
+            "else" => TokenType::Keyword(Keyword::Else),
+            "enum" => TokenType::Keyword(Keyword::Enum),
+            "extern" => TokenType::Keyword(Keyword::Extern),
+            "float" => TokenType::Keyword(Keyword::Float),
+            "for" => TokenType::Keyword(Keyword::For),
+            "goto" => TokenType::Keyword(Keyword::Goto),
+            "if" => TokenType::Keyword(Keyword::If),
+            "int" => TokenType::Keyword(Keyword::Int),
+            "long" => TokenType::Keyword(Keyword::Long),
+            "register" => TokenType::Keyword(Keyword::Register),
+            "return" => TokenType::Keyword(Keyword::Return),
+            "short" => TokenType::Keyword(Keyword::Short),
+            "signed" => TokenType::Keyword(Keyword::Signed),
+            "sizeof" => TokenType::Keyword(Keyword::Sizeof),
+            "static" => TokenType::Keyword(Keyword::Static),
+            "struct" => TokenType::Keyword(Keyword::Struct),
+            "switch" => TokenType::Keyword(Keyword::Switch),
+            "typedef" => TokenType::Keyword(Keyword::Typedef),
+            "union" => TokenType::Keyword(Keyword::Union),
+            "unsigned" => TokenType::Keyword(Keyword::Unsigned),
+            "void" => TokenType::Keyword(Keyword::Void),
+            "volatile" => TokenType::Keyword(Keyword::Volatile),
+            "while" => TokenType::Keyword(Keyword::While),
+            _ => TokenType::Identifier,
+        };
+
+        Token::new(token_type, Value::String(identifier), token_position.row, token_position.col)
     }
 
     fn handle_number(&mut self) -> Token {
@@ -101,5 +159,19 @@ impl<'a> Lexer<'a> {
 
     fn handle_string(&mut self) -> Token {
         todo!()
+    }
+
+    fn skip_whitespace(&mut self) {
+        while let Some(ch) = self.current_char {
+            if ch.is_whitespace() {
+                self.advance();
+            } else {
+                break;
+            }
+        }
+    }
+
+    pub fn get_errors(&self) -> &[LexingError] {
+        &self.errors
     }
 }
