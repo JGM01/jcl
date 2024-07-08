@@ -210,7 +210,6 @@ impl<'a> Lexer<'a> {
     }
 
     fn handle_punctuator(&mut self) -> Token {
-        // Get relevant info
         let position = self.position.clone();
         let value = self.current_char.unwrap();
         let token_type = TokenType::Punctuator(value);

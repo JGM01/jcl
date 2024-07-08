@@ -6,7 +6,7 @@ pub struct Position {
     pub col: usize,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Operator {
     // Arithmetic
     Add,
@@ -52,7 +52,7 @@ pub enum Operator {
     RightShiftAssign,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Keyword {
     Auto,
     Break,
@@ -88,7 +88,7 @@ pub enum Keyword {
     While,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum TokenType {
     Identifier,
     Keyword(Keyword),

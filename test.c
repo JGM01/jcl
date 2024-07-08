@@ -1,4 +1,5 @@
 int main() {
-    char test = 'a';
-    char test3 = ' ';
+    // Comment!
+    int x = 5;
+    return x;
 }
