@@ -54,7 +54,7 @@ impl<'a> Lexer<'a> {
     }
 
     /// Provides the next token in a stream of characters.
-    pub fn next_token(&mut self) -> Option<Token> {
+    pub fn next_token(&mut self) -> Token {
         self.skip_whitespace();
 
         // Define the token by checking the current character, and then handle.
@@ -66,6 +66,7 @@ impl<'a> Lexer<'a> {
                 'a'..='z' | 'A'..='Z' | '_' => self.handle_symbol(),
                 '0'..='9' => self.handle_number(),
                 '"' => self.handle_string(),
+                '\'' => self.handle_char(),
                 '+' | '-' | '*' | '=' | '<' | '>' | '&' | '|' => self.handle_operator(),
                 ';' | ',' | '(' | ')' | '{' | '}' | '[' | ']' | '.' => self.handle_punctuator(),
 
@@ -73,17 +74,39 @@ impl<'a> Lexer<'a> {
                 // Also, make sure the lexer still continues it's advancement.
                 _ => {
                     let error_position = self.position.clone();
-                    self.errors.push(LexingError {
-                        message: format!("Unexpected character: {}", c),
-                        position: error_position,
-                    });
+                    self.errors.push(LexingError::new(
+                        format!("Unexpected character: {}", c),
+                        error_position
+                    ));
+
                     self.advance();
                     return self.next_token()
                 }
             },
-            None => return None,
+            None => return Token::new(TokenType::EOF, Value::Empty, self.position.row, self.position.col),
         };
-        Some(token)
+        token
+    }
+
+    fn handle_char(&mut self) -> Token {
+        let position = self.position.clone();
+        let mut value = String::new();
+
+        self.advance();
+
+        while let Some(c) = self.current_char {
+            if value.len() == 1 {
+                break;
+            }
+            if c != '\'' {
+                value.push(c);
+                self.advance();
+            } else {
+                return Token::new(TokenType::EmptyLiteral, Value::Empty, position.row, position.col)
+            }
+        }
+        self.advance();
+        Token::new(TokenType::CharLiteral, Value::Char(value.chars().next().unwrap()), position.row, position.col)
     }
 
     fn handle_comment_or_division(&mut self) -> Token {

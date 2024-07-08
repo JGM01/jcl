@@ -4,6 +4,7 @@ use std::path::Path;
 
 mod lexer;
 use lexer::lexer::Lexer;
+use lexer::token::TokenType;
 
 
 fn main() {
@@ -32,8 +33,12 @@ fn run_lexer(file_path: &str) -> Result<(), std::io::Error> {
 
     // Print token stream
     println!("Tokens:");
-    while let Some(token) = lexer.next_token() {
+    loop  {
+        let token = lexer.next_token();
         println!("{}", token);
+        if token.token_type == TokenType::EOF {
+            break;
+        }
     }
 
     // Print errors

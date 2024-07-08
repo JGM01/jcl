@@ -97,9 +97,9 @@ pub enum TokenType {
     FloatLiteral,
     CharLiteral,
     StringLiteral,
+    EmptyLiteral,
     Punctuator(char),
     Comment,
-    Whitespace,
     Unknown,
     EOF,
 }
@@ -110,6 +110,7 @@ pub enum Value {
     Integer(i64),
     Float(f64),
     Char(char),
+    Empty,
 }
 
 #[derive(Debug, Clone)]
