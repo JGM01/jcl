@@ -304,6 +304,17 @@ impl<'a> Lexer<'a> {
         self.advance();
 
         while let Some(c) = self.current_char {
+            if c == '\\' {
+                let peek = self.input.next().unwrap();
+                if peek == '"' {
+                    value.push_str("\"");
+                    self.advance();
+                    continue;
+                } else if peek == '\n' {
+                    self.advance();
+                    continue;
+                }
+            }
             if c != '"' {
                 value.push(c);
                 self.advance();
